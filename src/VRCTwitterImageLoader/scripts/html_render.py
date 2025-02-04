@@ -136,6 +136,8 @@ def save_html_as_png(
     ※もともとの待機タイミングを基本とし、レンダリング完了しているかを
       ツイートコンテナの高さで判定し、不具合の場合は再試行する。
     """
+    clip_width = 512
+    clip_height = 786
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         context = browser.new_context()
@@ -181,7 +183,7 @@ def save_html_as_png(
 
                 page.goto(local_url, wait_until="networkidle")
                 page.wait_for_timeout(3000)  # 初回待機（3秒）
-                page.set_viewport_size({"width": 512, "height": 768})
+                page.set_viewport_size({"width": clip_width, "height": clip_height})
                 page.wait_for_timeout(8000)  # レンダリング完了待機（8秒）
 
                 if is_tweet_rendered(page):
@@ -203,7 +205,11 @@ def save_html_as_png(
             screenshot_path = (
                 f"src/VRCTwitterImageLoader/pages/images/screenshot_{index}.png"
             )
-            page.screenshot(path=screenshot_path, full_page=True)
+            # 最大高さを制限し、超えるなら上寄せでトリミング
+            page.screenshot(
+                path=screenshot_path,
+                clip={"x": 0, "y": 0, "width": clip_width, "height": clip_height} 
+            )
             print(f"Screenshot saved to {screenshot_path}")
 
         browser.close()

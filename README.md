@@ -83,7 +83,7 @@ X (Twitter)の投稿のうち、特定のハッシュタグの投稿をリスト
         - 赤色のアイコン（失敗）になった場合は、上記設定を見直してください。
         - それでも直らない場合は不具合報告（このページ下部）してください。
     - "Upload Random Images"実行に成功すると、`https://{GitHubアカウント名}.github.io/VRCTwitterImageLoader/`にデプロイされたGitHub PagesにXの投稿画像が配信されます。
-1. VRChat UdonのImage Loadingを使用して上記URLから画像を取得することで、ワールド内で毎日更新されるテクスチャとして扱うことができます。画像サイズは 512 x 768 pxです。
+1. VRChat UdonのImage Loadingを使用して上記URLから画像を取得することで、ワールド内で毎日更新されるテクスチャとして扱うことができます。画像サイズは 512 x 786 pxです。
 1. 「[urls_orig_date.csv](src/VRCTwitterImageLoader/data/urls_orig_date.csv)の中身の更新」は勝手には行われず、masterブランチへのPull Requestで通知されます。内容に問題がなければMergeしてください。
     - リポジトリの「Pull requests」タブ→ 発行されたPRをクリック
     - 「Files changed」で差分を確認
