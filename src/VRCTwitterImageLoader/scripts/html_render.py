@@ -4,6 +4,11 @@ import urllib.request
 import json
 from playwright.sync_api import sync_playwright
 
+from scripts.user_config import VTILSettings
+
+
+settings = VTILSettings()
+
 
 def get_tweet_embedcode(tweet_url):
     """
@@ -136,8 +141,8 @@ def save_html_as_png(
     ※もともとの待機タイミングを基本とし、レンダリング完了しているかを
       ツイートコンテナの高さで判定し、不具合の場合は再試行する。
     """
-    clip_width = 512
-    clip_height = 786
+    clip_width = settings.CLIP_WIDTH
+    clip_height = settings.CLIP_HEIGHT
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         context = browser.new_context()
@@ -165,8 +170,8 @@ def save_html_as_png(
             # ローカルHTMLファイルのパスを生成
             local_url = "file://" + os.path.abspath(file_name)
 
-            # レンダリング完了の再試行（最大4回、ブラウザの再起動を含む）
-            max_attempts = 4
+            # レンダリング完了の再試行
+            max_attempts = settings.MAX_ATTEMPTS
             attempt = 0
             rendered = False
 
@@ -208,7 +213,7 @@ def save_html_as_png(
             # 最大高さを制限し、超えるなら上寄せでトリミング
             page.screenshot(
                 path=screenshot_path,
-                clip={"x": 0, "y": 0, "width": clip_width, "height": clip_height} 
+                clip={"x": 0, "y": 0, "width": clip_width, "height": clip_height},
             )
             print(f"Screenshot saved to {screenshot_path}")
 

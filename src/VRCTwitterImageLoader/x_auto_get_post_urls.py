@@ -5,7 +5,10 @@ import re
 import requests
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Tuple, Dict, Any, List
+from typing import Tuple, Any
+
+from scripts.user_config import VTILSettings
+
 
 # スクリプトのあるディレクトリを基準にしてパスを設定
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # スクリプトのディレクトリ
@@ -37,19 +40,19 @@ def extract_tweet_id(url: str) -> str:
 
 
 def create_url(
-    x_hash_tag_str: str, n_days: int, max_results: int
-) -> Tuple[str, Dict[str, Any]]:
+    x_hashtag_str: str, n_days: int, max_results: int
+) -> Tuple[str, dict[str, Any]]:
     """Twitter API リクエスト用の URL とパラメータを作成する
 
     今回は expansions と user.fields を追加して投稿者のユーザー名を取得する
 
     Args:
-        x_hash_tag_str (str): 検索に使用するハッシュタグ文字列
+        x_hashtag_str (str): 検索に使用するハッシュタグ文字列
         n_days (int): 過去 n 日間のツイートを取得するための日数
         max_results (int): 取得する最大件数
 
     Returns:
-        Tuple[str, Dict[str, Any]]: リクエストURL とパラメータの辞書
+        Tuple[str, dict[str, Any]]: リクエストURL とパラメータの辞書
     """
     url = "https://api.twitter.com/2/tweets/search/recent"
 
@@ -60,7 +63,7 @@ def create_url(
     )
 
     # リツイートを除外するクエリを作成
-    query = f"{x_hash_tag_str} -is:retweet"
+    query = f"{x_hashtag_str} -is:retweet"
     params = {
         "query": query,
         "tweet.fields": "created_at,author_id",
@@ -74,18 +77,18 @@ def create_url(
 
 
 def connect_to_endpoint(
-    url: str, params: Dict[str, Any], token: str, max_retries: int = 3
-) -> Dict[str, Any]:
+    url: str, params: dict[str, Any], token: str, max_retries: int = 3
+) -> dict[str, Any]:
     """Twitter API エンドポイントにリクエストを送り、結果の JSON を返す
 
     Args:
         url (str): APIエンドポイントのURL
-        params (Dict[str, Any]): リクエストパラメータの辞書
+        params (dict[str, Any]): リクエストパラメータの辞書
         token (str): Bearer Token
         max_retries (int, optional): 最大リトライ回数. Defaults to 3.
 
     Returns:
-        Dict[str, Any]: APIからのレスポンスのJSON辞書
+        dict[str, Any]: APIからのレスポンスのJSON辞書
 
     Raises:
         Exception: レスポンスコードが200以外の場合、または最大リトライ回数を超えた場合
@@ -107,8 +110,8 @@ def connect_to_endpoint(
 
 
 def fetch_tweets(
-    token: str, x_hash_tag_str: str, n_days: int, max_results: int
-) -> List[Dict[str, str]]:
+    token: str, x_hashtag_str: str, n_days: int, max_results: int
+) -> list[dict[str, str]]:
     """Twitter API からツイート情報を取得し、URL と日付（YYYY-MM-DD）のリストを返す
 
     ツイート情報取得時に expansions で投稿者情報も取得することで、各ツイートの URL を
@@ -117,14 +120,14 @@ def fetch_tweets(
 
     Args:
         token (str): Bearer Token
-        x_hash_tag_str (str): 検索に使用するハッシュタグ文字列
+        x_hashtag_str (str): 検索に使用するハッシュタグ文字列
         n_days (int): 過去 n 日間のツイートを取得するための日数
         max_results (int): 取得する最大件数
 
     Returns:
-        List[Dict[str, str]]: ツイートの URL と作成日（日本時間）の辞書のリスト
+        list[dict[str, str]]: ツイートの URL と作成日（日本時間）の辞書のリスト
     """
-    url, params = create_url(x_hash_tag_str, n_days, max_results)
+    url, params = create_url(x_hashtag_str, n_days, max_results)
     json_response = connect_to_endpoint(url, params, token)
     tweets_list = []
 
@@ -156,14 +159,14 @@ def fetch_tweets(
     return tweets_list
 
 
-def read_csv_file(csv_file_path: str) -> List[Dict[str, str]]:
+def read_csv_file(csv_file_path: str) -> list[dict[str, str]]:
     """CSV ファイルを読み込み、各行を辞書のリストとして返す
 
     Args:
         csv_file_path (str): CSVファイルのフルパス
 
     Returns:
-        List[Dict[str, str]]: CSVの各行（url, date）の辞書リスト
+        list[dict[str, str]]: CSVの各行（url, date）の辞書リスト
     """
     rows = []
     if os.path.exists(csv_file_path):
@@ -174,12 +177,12 @@ def read_csv_file(csv_file_path: str) -> List[Dict[str, str]]:
     return rows
 
 
-def write_csv_file(csv_file_path: str, rows: List[Dict[str, str]]) -> None:
+def write_csv_file(csv_file_path: str, rows: list[dict[str, str]]) -> None:
     """CSV ファイルにデータを書き出す
 
     Args:
         csv_file_path (str): CSVファイルのフルパス
-        rows (List[Dict[str, str]]): 書き出す各行の辞書リスト（フィールド名: url, date）
+        rows (list[dict[str, str]]): 書き出す各行の辞書リスト（フィールド名: url, date）
     """
     with open(csv_file_path, "w", encoding="utf-8", newline="") as csvfile:
         fieldnames = ["url", "date"]
@@ -190,14 +193,14 @@ def write_csv_file(csv_file_path: str, rows: List[Dict[str, str]]) -> None:
 
 
 def update_csv_with_new_tweets(
-    new_tweets: List[Dict[str, str]], csv_file_path: str
+    new_tweets: list[dict[str, str]], csv_file_path: str
 ) -> None:
     """新規取得したツイート情報を、既存の CSV に追加（重複なし）
 
     既存の CSV にすでに記録済みのツイートID（URL末尾の数値部分）と重複しないものだけを追加する
 
     Args:
-        new_tweets (List[Dict[str, str]]): 新たに取得したツイート情報（url, date）
+        new_tweets (list[dict[str, str]]): 新たに取得したツイート情報（url, date）
         csv_file_path (str): CSVファイルのフルパス
     """
     ensure_data_directory_exists(csv_file_path)
@@ -217,6 +220,8 @@ def update_csv_with_new_tweets(
     # 新規ツイートを上部に追加
     updated_rows = unique_new_tweets + existing_rows
     write_csv_file(csv_file_path, updated_rows)
+    print(f"Collected URLs: {new_tweets}")
+    print(f"Extracted Unique URLs: {unique_new_tweets}")
     print(
         f"Updated CSV file at {csv_file_path} with {len(unique_new_tweets)} new tweets."
     )
@@ -224,21 +229,21 @@ def update_csv_with_new_tweets(
 
 def save_hashtag_post_info_to_csv(
     token: str,
-    x_hash_tag_str: str,
-    n_days: int = 3,
-    max_results: int = 50,
-    csv_file_path: str = CSV_FILE_PATH,
+    x_hashtag_str: str,
+    n_days: int,
+    max_results: int,
+    csv_file_path: str,
 ) -> None:
     """指定のハッシュタグ、期間、件数でツイートを取得し、CSV ファイルに更新する
 
     Args:
         token (str): Bearer Token
-        x_hash_tag_str (str): 検索に使用するハッシュタグ文字列
+        x_hashtag_str (str): 検索に使用するハッシュタグ文字列
         n_days (int, optional): 過去 n 日間のツイートを取得. Defaults to 3.
         max_results (int, optional): 取得する最大件数. Defaults to 50.
         csv_file_path (str, optional): CSVファイルのフルパス. Defaults to CSV_FILE_PATH.
     """
-    new_tweets = fetch_tweets(token, x_hash_tag_str, n_days, max_results)
+    new_tweets = fetch_tweets(token, x_hashtag_str, n_days, max_results)
     update_csv_with_new_tweets(new_tweets, csv_file_path)
 
 
@@ -248,11 +253,12 @@ if __name__ == "__main__":
     if token is None:
         raise Exception("環境変数 X_BEARER_TOKEN が設定されていません。")
 
-    # 各種パラメータの設定
-    x_hash_tag_str = "#Quest散歩"
-    n_days = 5
-    max_results = 30
+    settings = VTILSettings()
 
     save_hashtag_post_info_to_csv(
-        token, x_hash_tag_str, n_days, max_results, CSV_FILE_PATH
+        token=token,
+        x_hashtag_str=settings.X_HASHTAG_STR,
+        n_days=settings.N_DAYS,
+        max_results=settings.MAX_RESULTS,
+        csv_file_path=CSV_FILE_PATH,
     )
