@@ -43,7 +43,7 @@ jobs:
       if: env.CHANGES_DETECTED == 'true'
       uses: peter-evans/create-pull-request@v6
       with:
-        branch: "update/twitter-data"
+        branch: "update/twitter-data-${{ github.run_id }}"
         title: "Update Twitter Data (Automated)"
         body: |
           This pull request updates the Twitter data CSV file with new tweets.
