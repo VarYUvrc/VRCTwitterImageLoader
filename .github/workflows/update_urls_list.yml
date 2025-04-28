@@ -14,41 +14,48 @@ jobs:
       pull-requests: write
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # 差分を正しく検出するためにフルクローン
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 差分を正しく検出するためにフルクローン
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
 
-    - name: Install Python Packages
-      run: |
-        uv sync --no-dev --frozen
+      - name: Install Python Packages
+        run: |
+          uv sync --no-dev --frozen
 
-    - name: Run Twitter Data Update Script
-      env:
-        X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}  # GitHub Secrets から API トークンを取得
-      run: |
-        uv run python src/VRCTwitterImageLoader/x_auto_get_post_urls.py
+      - name: Run Twitter Data Update Script
+        env:
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}  # GitHub Secrets から API トークンを取得
+        run: |
+          uv run python src/VRCTwitterImageLoader/x_auto_get_post_urls.py
 
-    - name: Check for changes
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Check for changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet || echo "CHANGES_DETECTED=true" >> $GITHUB_ENV
 
-        git diff --quiet || echo "CHANGES_DETECTED=true" >> $GITHUB_ENV
+      - id: cpr
+        name: Create Pull Request
+        if: env.CHANGES_DETECTED == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: "update/twitter-data-${{ github.run_id }}"
+          title: "Update Twitter Data (Automated)"
+          body: |
+            This pull request updates the Twitter data CSV file with new tweets.
+            - Automated update from GitHub Actions.
+          commit-message: "Update Twitter data CSV file"
+          base: "master"
+          delete-branch: true
+          labels: "automated update"
 
-    - name: Create Pull Request
-      if: env.CHANGES_DETECTED == 'true'
-      uses: peter-evans/create-pull-request@v6
-      with:
-        branch: "update/twitter-data-${{ github.run_id }}"
-        title: "Update Twitter Data (Automated)"
-        body: |
-          This pull request updates the Twitter data CSV file with new tweets.
-          - Automated update from GitHub Actions.
-        commit-message: "Update Twitter data CSV file"
-        base: "master"
-        delete-branch: true
-        labels: "automated update"
+      - name: Enable PR auto-merge
+        if: steps.cpr.outputs.pull-request-number != ''
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
