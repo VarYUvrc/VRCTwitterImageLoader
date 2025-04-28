@@ -43,18 +43,18 @@ X (Twitter)の投稿のうち、特定のハッシュタグの投稿をリスト
 2. [user_config.py](src/VRCTwitterImageLoader/scripts/user_config.py)の`X_HASHTAG_STR`の値を収集対象のハッシュタグに変更してください。
     - 初期設定では`X_HASHTAG_STR = "#Quest散歩"`になっています。
 3. [X開発者ページ](https://developer.twitter.com/en/portal/dashboard)にログイン(Freeアカウントでも可)し、BEARER TOKENを発行してください。
-4. GitHub ActionsのRepository Secretsに4.で発行したTokenの値を保存してください。
-    - 「Settings」→「Security」→「Actions」→「Repository secrets」セクションで、「New Repository secret」をクリック
+4. 下記の操作で、GitHub ActionsのRepository Secretsに4.で発行したTokenを登録してください。
+    - GitHubの「Settings」→「Security」→「Actions」→「Repository secrets」セクションで、「New Repository secret」をクリック
         - Name: `X_BEARER_TOKEN`
         - Secret: Tokenの値（AAAA....）を貼り付け
     - 「Add secret」をクリック
 5. 下記の操作で、リポジトリのGitHub ActionsにPull Requestの権限を付与してください。
-    - 「Settings」→「Actions」→「General」→ 「Workflow permissions」セクションで以下を設定:
+    - GitHubの「Settings」→「Actions」→「General」→ 「Workflow permissions」セクションで以下を設定:
         - "Read and write permissions"を選択
         - "Allow GitHub Actions to create and approve pull requests"にチェック
         - 「Save」をクリック
 6. 下記の操作で、リポジトリのGitHub PagesがActionsからデプロイされるように変更してください。
-    - 「Settings」→「Pages」セクションで以下を設定:
+    - GitHubの「Settings」→「Pages」セクションで以下を設定:
         - 「Build and deployment」→「Source」を"Github Actions"に変更
         - 「Settings」→「Environments」に"github-pages"という環境変数が自動的に作成されていることを確認
 7. ここまでの変更がmasterブランチに反映(push)されていれば完了です。初期設定では、毎週2回水曜と土曜の3:00に[urls_orig_date.csv](src/VRCTwitterImageLoader/data/urls_orig_date.csv)の中身の更新が提案され、毎日4:00にその中からランダムで10件の投稿が下記のURLに配信されます。
