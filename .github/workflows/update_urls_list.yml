@@ -1,10 +1,10 @@
 name: Update URLs list
 
 on:
-  workflow_dispatch:  # 手動実行も可能
+  workflow_dispatch:
   schedule:
-    - cron: '0 18 * * 2'  # 毎週火曜日18:00 UTC（日本時間 水曜3:00）
-    - cron: '0 18 * * 5'  # 毎週金曜日18:00 UTC（日本時間 土曜3:00）
+    - cron: '0 18 * * 2'  # 毎週火曜18:00 UTC（日本時間 水曜3:00）
+    - cron: '0 18 * * 5'  # 毎週金曜18:00 UTC（日本時間 土曜3:00）
 
 jobs:
   update-twitter-data:
@@ -17,20 +17,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 差分を正しく検出するためにフルクローン
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
       - name: Install Python Packages
-        run: |
-          uv sync --no-dev --frozen
+        run: uv sync --no-dev --frozen
 
       - name: Run Twitter Data Update Script
         env:
-          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}  # GitHub Secrets から API トークンを取得
-        run: |
-          uv run python src/VRCTwitterImageLoader/x_auto_get_post_urls.py
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+        run: uv run python src/VRCTwitterImageLoader/x_auto_get_post_urls.py
 
       - name: Check for changes
         run: |
@@ -43,19 +41,22 @@ jobs:
         if: env.CHANGES_DETECTED == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
-          branch: "update/twitter-data-${{ github.run_id }}"
-          title: "Update Twitter Data (Automated)"
+          branch: update/twitter-data-${{ github.run_id }}
+          title: Update Twitter Data (Automated)
           body: |
             This pull request updates the Twitter data CSV file with new tweets.
             - Automated update from GitHub Actions.
-          commit-message: "Update Twitter data CSV file"
-          base: "master"
+          commit-message: Update Twitter data CSV file
+          base: master
           delete-branch: true
-          labels: "automated update"
+          labels: automated update
 
-      - name: Enable PR auto-merge
+      - name: Merge Pull Request via CLI
         if: steps.cpr.outputs.pull-request-number != ''
-        uses: peter-evans/enable-pull-request-automerge@v3
-        with:
-          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
-          merge-method: squash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge ${{ steps.cpr.outputs.pull-request-number }} \
+            --squash \
+            --auto \
+            --delete-branch
